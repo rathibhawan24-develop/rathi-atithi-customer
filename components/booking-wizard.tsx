@@ -221,7 +221,17 @@ export function BookingWizard() {
       setError(rpcError.message);
       return;
     }
-    const code = Array.isArray(data) ? data[0]?.booking_code : null;
+    // The RPC returns either a jsonb object { booking_code, booking_id }
+    // (current) or an array of rows with booking_code (legacy TABLE return).
+    // Handle both shapes defensively.
+    let code: string | null = null;
+    if (data) {
+      if (Array.isArray(data)) {
+        code = (data[0] as { booking_code?: string } | undefined)?.booking_code ?? null;
+      } else if (typeof data === "object") {
+        code = (data as { booking_code?: string }).booking_code ?? null;
+      }
+    }
     setBookingCode(code);
     setStep(5);
   };

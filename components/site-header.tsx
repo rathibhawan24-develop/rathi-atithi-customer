@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function SiteHeader() {
   return (
@@ -7,13 +8,11 @@ export function SiteHeader() {
       <div className="container flex items-center justify-between h-16">
         <Link href="/" className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-full bg-black p-1 shrink-0 shadow-sm">
-            <Image
-              src="/logo.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${BASE_PATH}/logo.png`}
               alt="Rathi Atithi Bhawan logo"
-              width={44}
-              height={44}
               className="w-full h-full object-contain"
-              priority
             />
           </div>
           <div className="flex flex-col leading-none">

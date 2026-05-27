@@ -26,6 +26,10 @@ export function ContactForm() {
       setError("Please fill in your name, phone, and message.");
       return;
     }
+    if (!/^\d{10}$/.test(phone)) {
+      setError("Phone must be exactly 10 digits.");
+      return;
+    }
 
     setSubmitting(true);
     const { error: insertError } = await supabase.from("inquiries").insert({
@@ -70,12 +74,18 @@ export function ContactForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cf_phone">Phone</Label>
+          <Label htmlFor="cf_phone">Phone (10 digits)</Label>
           <Input
             id="cf_phone"
             type="tel"
+            inputMode="numeric"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) =>
+              setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+            }
+            placeholder="9876543210"
+            maxLength={10}
+            pattern="\d{10}"
             required
           />
         </div>

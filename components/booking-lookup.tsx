@@ -95,13 +95,18 @@ export function BookingLookup() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bl_phone">Phone</Label>
+                <Label htmlFor="bl_phone">Phone (10 digits)</Label>
                 <Input
                   id="bl_phone"
                   type="tel"
+                  inputMode="numeric"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="The number you booked with"
+                  onChange={(e) =>
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                  }
+                  placeholder="9876543210"
+                  maxLength={10}
+                  pattern="\d{10}"
                   required
                 />
               </div>

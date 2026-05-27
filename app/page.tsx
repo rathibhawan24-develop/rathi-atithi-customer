@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Bed,
   Users,
@@ -103,6 +104,16 @@ export default async function LandingPage() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/15 via-accent/40 to-background" />
         <div className="container py-20 md:py-28 lg:py-32">
           <div className="max-w-3xl">
+            <div className="mb-8 inline-block rounded-2xl bg-black p-3 shadow-xl">
+              <Image
+                src="/logo.png"
+                alt="Rathi Atithi Bhawan logo"
+                width={144}
+                height={144}
+                className="w-32 h-32 md:w-36 md:h-36 object-contain"
+                priority
+              />
+            </div>
             <p className="text-xs uppercase tracking-[0.3em] text-primary font-medium mb-4">
               Vrindavan · Mathura · Uttar Pradesh
             </p>

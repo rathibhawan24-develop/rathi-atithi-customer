@@ -47,7 +47,12 @@ export function BookingWizard() {
   const [checkOut, setCheckOut] = useState(addDaysIso(todayIso(), 1));
 
   // Step 2 data
-  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  // Holds ALL active rooms with an `isAvailable` flag. Booked rooms still show
+  // in the list (marked "Already booked") so guests aren't confused about
+  // missing rooms. They're sorted to the bottom of each type group.
+  const [allRooms, setAllRooms] = useState<Array<Room & { isAvailable: boolean }>>(
+    []
+  );
   const [availableAddons, setAvailableAddons] = useState<Addon[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [selectedRooms, setSelectedRooms] = useState<Record<string, SelectedRoom>>(
@@ -74,7 +79,7 @@ export function BookingWizard() {
     let roomsSub = 0;
     let addonsSub = 0;
     for (const sel of rows) {
-      const room = availableRooms.find((r) => r.id === sel.roomId);
+      const room = allRooms.find((r) => r.id === sel.roomId);
       if (!room) continue;
       roomsSub += Number(room.base_price) * nights;
       for (const [addonId, qty] of Object.entries(sel.addons)) {
@@ -85,7 +90,7 @@ export function BookingWizard() {
       }
     }
     return { roomsSub, addonsSub, total: roomsSub + addonsSub };
-  }, [selectedRooms, availableRooms, availableAddons, nights]);
+  }, [selectedRooms, allRooms, availableAddons, nights]);
 
   const selectedRoomCount = Object.keys(selectedRooms).length;
 
@@ -110,7 +115,15 @@ export function BookingWizard() {
     }
 
     setLoadingRooms(true);
-    const [roomsRes, addonsRes] = await Promise.all([
+    // Fetch all active rooms AND the available subset in parallel. We need both
+    // so we can show booked rooms in the list (with an "Already booked" badge)
+    // instead of hiding them entirely.
+    const [allRoomsRes, availableRes, addonsRes] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true }),
       supabase.rpc("get_available_rooms", {
         p_check_in: checkIn,
         p_check_out: checkOut,
@@ -123,11 +136,22 @@ export function BookingWizard() {
     ]);
     setLoadingRooms(false);
 
-    if (roomsRes.error) {
-      setError(roomsRes.error.message);
+    if (allRoomsRes.error) {
+      setError(allRoomsRes.error.message);
       return;
     }
-    setAvailableRooms((roomsRes.data ?? []) as Room[]);
+    if (availableRes.error) {
+      setError(availableRes.error.message);
+      return;
+    }
+    const availableIds = new Set(
+      ((availableRes.data ?? []) as Room[]).map((r) => r.id)
+    );
+    const merged = ((allRoomsRes.data ?? []) as Room[]).map((r) => ({
+      ...r,
+      isAvailable: availableIds.has(r.id),
+    }));
+    setAllRooms(merged);
     setAvailableAddons((addonsRes.data ?? []) as Addon[]);
     setSelectedRooms({});
     setStep(2);
@@ -173,6 +197,10 @@ export function BookingWizard() {
 
     if (!guestName.trim() || !phone.trim() || !email.trim()) {
       setError("Please fill in name, phone, and email.");
+      return;
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      setError("Phone must be exactly 10 digits.");
       return;
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
@@ -311,7 +339,7 @@ export function BookingWizard() {
 
       {step === 2 && (
         <RoomSelectStep
-          rooms={availableRooms}
+          rooms={allRooms}
           addons={availableAddons}
           selected={selectedRooms}
           toggleRoom={toggleRoom}
@@ -354,12 +382,18 @@ export function BookingWizard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="g_phone">Phone</Label>
+                  <Label htmlFor="g_phone">Phone (10 digits)</Label>
                   <Input
                     id="g_phone"
                     type="tel"
+                    inputMode="numeric"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) =>
+                      setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                    }
+                    placeholder="9876543210"
+                    maxLength={10}
+                    pattern="\d{10}"
                     required
                   />
                 </div>
@@ -401,6 +435,10 @@ export function BookingWizard() {
                 onClick={() => {
                   if (!guestName.trim() || !phone.trim() || !email.trim()) {
                     setError("Please fill in name, phone, and email.");
+                    return;
+                  }
+                  if (!/^\d{10}$/.test(phone)) {
+                    setError("Phone must be exactly 10 digits.");
                     return;
                   }
                   setError(null);
@@ -449,7 +487,7 @@ export function BookingWizard() {
                   Rooms
                 </p>
                 {Object.values(selectedRooms).map((sel) => {
-                  const room = availableRooms.find((r) => r.id === sel.roomId);
+                  const room = allRooms.find((r) => r.id === sel.roomId);
                   if (!room) return null;
                   return (
                     <div key={sel.roomId} className="text-sm">
@@ -667,7 +705,7 @@ function RoomSelectStep({
   onBack,
   onNext,
 }: {
-  rooms: Room[];
+  rooms: Array<Room & { isAvailable: boolean }>;
   addons: Addon[];
   selected: Record<string, SelectedRoom>;
   toggleRoom: (room: Room) => void;
@@ -680,17 +718,26 @@ function RoomSelectStep({
   onBack: () => void;
   onNext: () => void;
 }) {
-  // Group rooms by type
+  // Group rooms by type. Within each group, sort available first, booked last.
   const grouped = useMemo(() => {
-    const m = new Map<string, Room[]>();
+    const m = new Map<string, Array<Room & { isAvailable: boolean }>>();
     for (const r of rooms) {
       const arr = m.get(r.room_type) ?? [];
       arr.push(r);
       m.set(r.room_type, arr);
     }
+    for (const arr of m.values()) {
+      arr.sort((a, b) => {
+        if (a.isAvailable !== b.isAvailable) return a.isAvailable ? -1 : 1;
+        return a.display_order - b.display_order;
+      });
+    }
     return m;
   }, [rooms]);
   const types = Array.from(grouped.keys());
+
+  const availableCount = rooms.filter((r) => r.isAvailable).length;
+  const bookedCount = rooms.length - availableCount;
 
   return (
     <Card>
@@ -700,7 +747,8 @@ function RoomSelectStep({
             <h2 className="font-display text-2xl">Choose your rooms</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {formatDate(checkIn)} → {formatDate(checkOut)} · {nights} night
-              {nights === 1 ? "" : "s"} · {rooms.length} available
+              {nights === 1 ? "" : "s"} · {availableCount} available
+              {bookedCount > 0 && `, ${bookedCount} already booked`}
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={onBack}>
@@ -711,9 +759,17 @@ function RoomSelectStep({
 
         {rooms.length === 0 ? (
           <div className="rounded-md border border-dashed py-8 text-center">
-            <p className="font-medium">No rooms available for those dates.</p>
+            <p className="font-medium">No rooms in the system.</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Please try different dates or contact us directly.
+              Please contact us directly.
+            </p>
+          </div>
+        ) : availableCount === 0 ? (
+          <div className="rounded-md border border-warning/40 bg-warning/5 py-8 px-4 text-center">
+            <p className="font-medium">All rooms are booked for those dates.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Please try different dates or contact us — we may have last-minute
+              availability.
             </p>
           </div>
         ) : (
@@ -782,7 +838,7 @@ function RoomRow({
   onGuestsChange,
   onAddonChange,
 }: {
-  room: Room;
+  room: Room & { isAvailable: boolean };
   addons: Addon[];
   selected: SelectedRoom | undefined;
   nights: number;
@@ -793,12 +849,17 @@ function RoomRow({
   const photoUrl =
     room.photos && room.photos[0] ? storagePublicUrl(room.photos[0]) : null;
   const isSelected = !!selected;
+  const isBooked = !room.isAvailable;
 
   return (
     <div
       className={cn(
         "rounded-lg border transition-colors",
-        isSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+        isBooked
+          ? "border-border bg-muted/30 opacity-70"
+          : isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border bg-card"
       )}
     >
       <div className="flex flex-wrap sm:flex-nowrap gap-3 p-3">
@@ -808,7 +869,10 @@ function RoomRow({
             <img
               src={photoUrl}
               alt={room.name}
-              className="w-full h-full object-cover"
+              className={cn(
+                "w-full h-full object-cover",
+                isBooked && "grayscale"
+              )}
             />
           ) : (
             <BedDouble className="h-8 w-8 text-muted-foreground/40" />
@@ -817,9 +881,16 @@ function RoomRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="font-medium">
-                #{room.room_number} · {room.name}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium">
+                  #{room.room_number} · {room.name}
+                </p>
+                {isBooked && (
+                  <span className="inline-flex items-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Already booked
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                 <Users className="h-3 w-3" />
                 Sleeps {room.max_occupancy}
@@ -837,16 +908,18 @@ function RoomRow({
               {room.description}
             </p>
           )}
-          <div className="mt-2">
-            <Button
-              type="button"
-              variant={isSelected ? "secondary" : "default"}
-              size="sm"
-              onClick={onToggle}
-            >
-              {isSelected ? "Remove" : "Select"}
-            </Button>
-          </div>
+          {!isBooked && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant={isSelected ? "secondary" : "default"}
+                size="sm"
+                onClick={onToggle}
+              >
+                {isSelected ? "Remove" : "Select"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/primitives";
 import { ContactForm } from "@/components/contact-form";
 import { HeroSearch } from "@/components/hero-search";
+import { RoomCarousel, type CarouselSlide } from "@/components/room-carousel";
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
 
@@ -93,6 +94,45 @@ async function getRoomTypeSummaries(): Promise<RoomTypeSummary[]> {
   return summaries;
 }
 
+// One slide per room type for the auto-rotating carousel. Uses the first
+// available photo from any room of that type, falling back to a placeholder
+// gradient when no photos have been uploaded yet. Photos will start appearing
+// automatically on the next deploy after the client uploads via admin /rooms.
+async function getCarouselSlides(): Promise<CarouselSlide[]> {
+  const { data } = await supabase
+    .from("rooms")
+    .select(
+      "id, room_type, name, base_price, max_occupancy, photos, display_order"
+    )
+    .eq("is_active", true)
+    .order("display_order");
+  if (!data || data.length === 0) return [];
+
+  const slides: CarouselSlide[] = [];
+  for (const type of TYPE_ORDER) {
+    const typeRooms = data.filter((r) => r.room_type === type);
+    if (typeRooms.length === 0) continue;
+    const withPhoto = typeRooms.find(
+      (r) => Array.isArray(r.photos) && r.photos.length > 0
+    );
+    const representative = withPhoto ?? typeRooms[0];
+    const minPrice = Math.min(...typeRooms.map((r) => Number(r.base_price)));
+    const maxCapacity = Math.max(...typeRooms.map((r) => r.max_occupancy));
+    slides.push({
+      id: representative.id,
+      photoPath:
+        (representative.photos as string[] | null)?.[0] ?? null,
+      title: type,
+      subtitle: `${typeRooms.length} room${
+        typeRooms.length === 1 ? "" : "s"
+      } available`,
+      price: minPrice,
+      capacity: maxCapacity,
+    });
+  }
+  return slides;
+}
+
 const AMENITIES = [
   { icon: Wifi, label: "Free Wi-Fi" },
   { icon: Coffee, label: "Tea & coffee" },
@@ -110,7 +150,10 @@ const TRUST_SIGNALS = [
 ];
 
 export default async function LandingPage() {
-  const roomTypes = await getRoomTypeSummaries();
+  const [roomTypes, carouselSlides] = await Promise.all([
+    getRoomTypeSummaries(),
+    getCarouselSlides(),
+  ]);
 
   return (
     <>
@@ -191,6 +234,12 @@ export default async function LandingPage() {
               with family, or as a group.
             </p>
           </div>
+
+          {carouselSlides.length > 0 && (
+            <div className="mb-10 sm:mb-12">
+              <RoomCarousel slides={carouselSlides} />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {roomTypes.map((t) => (

@@ -112,16 +112,20 @@ async function getCarouselSlides(): Promise<CarouselSlide[]> {
   for (const type of TYPE_ORDER) {
     const typeRooms = data.filter((r) => r.room_type === type);
     if (typeRooms.length === 0) continue;
-    const withPhoto = typeRooms.find(
-      (r) => Array.isArray(r.photos) && r.photos.length > 0
-    );
-    const representative = withPhoto ?? typeRooms[0];
+    // Gather every photo across all rooms of this type (de-duplicated).
+    const photos: string[] = [];
+    for (const r of typeRooms) {
+      if (Array.isArray(r.photos)) {
+        for (const p of r.photos as string[]) {
+          if (p && !photos.includes(p)) photos.push(p);
+        }
+      }
+    }
     const minPrice = Math.min(...typeRooms.map((r) => Number(r.base_price)));
     const maxCapacity = Math.max(...typeRooms.map((r) => r.max_occupancy));
     slides.push({
-      id: representative.id,
-      photoPath:
-        (representative.photos as string[] | null)?.[0] ?? null,
+      id: type,
+      photos,
       title: type,
       subtitle: `${typeRooms.length} room${
         typeRooms.length === 1 ? "" : "s"
@@ -169,20 +173,20 @@ export default async function LandingPage() {
           }}
         />
 
-        <div className="container py-12 sm:py-16 md:py-24">
+        <div className="container pt-8 pb-12 sm:py-16 md:py-24">
           <div className="max-w-3xl mx-auto text-center">
             {/* Logo */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${BASE_PATH}/logo.png`}
               alt="Rathi Atithi Bhawan logo"
-              className="mx-auto mb-6 sm:mb-8 w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 object-contain drop-shadow-md"
+              className="mx-auto mb-5 sm:mb-8 w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain drop-shadow-md"
             />
 
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary font-medium">
               Vrindavan · Mathura · Uttar Pradesh
             </p>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.05] tracking-tight mt-3 sm:mt-4">
+            <h1 className="font-display text-[2rem] leading-[1.1] sm:text-5xl md:text-6xl sm:leading-[1.05] tracking-tight mt-3 sm:mt-4">
               A peaceful stay near the holy land.
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-3 sm:mt-4 max-w-xl mx-auto">

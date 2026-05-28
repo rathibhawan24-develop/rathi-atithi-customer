@@ -15,10 +15,12 @@ import {
   AlertCircle,
   Minus,
   Plus,
+  Images,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Textarea, Card, CardContent } from "@/components/ui/primitives";
+import { Lightbox } from "@/components/lightbox";
 import { supabase, storagePublicUrl } from "@/lib/supabase";
 import {
   formatCurrency,
@@ -934,9 +936,10 @@ function RoomCard({
   onGuestsChange: (g: number) => void;
   onAddonChange: (addonId: string, qty: number) => void;
 }) {
-  const photoUrl =
-    room.photos && room.photos[0] ? storagePublicUrl(room.photos[0]) : null;
+  const photos = Array.isArray(room.photos) ? room.photos : [];
+  const photoUrl = photos[0] ? storagePublicUrl(photos[0]) : null;
   const isSelected = !!selected;
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   return (
     <div
@@ -948,15 +951,42 @@ function RoomCard({
       )}
     >
       <div className="flex flex-col sm:flex-row">
-        {/* Photo */}
-        <div className="sm:w-48 h-40 sm:h-auto bg-gradient-to-br from-primary/10 to-accent/30 shrink-0 flex items-center justify-center overflow-hidden">
+        {/* Photo — click to open the gallery when photos exist */}
+        <div
+          className={cn(
+            "relative sm:w-48 h-40 sm:h-auto bg-gradient-to-br from-primary/10 to-accent/30 shrink-0 flex items-center justify-center overflow-hidden",
+            photoUrl && "cursor-pointer group/photo"
+          )}
+          onClick={photoUrl ? () => setGalleryOpen(true) : undefined}
+          role={photoUrl ? "button" : undefined}
+          tabIndex={photoUrl ? 0 : undefined}
+          onKeyDown={
+            photoUrl
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setGalleryOpen(true);
+                  }
+                }
+              : undefined
+          }
+          aria-label={photoUrl ? `View ${room.name} photos` : undefined}
+        >
           {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt={room.name}
-              className="w-full h-full object-cover"
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt={room.name}
+                className="w-full h-full object-cover transition-transform group-hover/photo:scale-105"
+              />
+              {photos.length > 1 && (
+                <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 backdrop-blur text-white text-[10px] font-medium px-2 py-1">
+                  <Images className="h-3 w-3" />
+                  {photos.length}
+                </span>
+              )}
+            </>
           ) : (
             <BedDouble className="h-12 w-12 text-primary/30" />
           )}
@@ -1076,6 +1106,13 @@ function RoomCard({
           )}
         </div>
       )}
+
+      <Lightbox
+        photos={photos}
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title={`${room.name} · Room #${room.room_number}`}
+      />
     </div>
   );
 }

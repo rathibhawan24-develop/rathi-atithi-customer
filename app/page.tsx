@@ -175,14 +175,6 @@ export default async function LandingPage() {
 
         <div className="container pt-8 pb-12 sm:py-16 md:py-24">
           <div className="max-w-3xl mx-auto text-center">
-            {/* Logo */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${BASE_PATH}/logo.png`}
-              alt="Rathi Atithi Bhawan logo"
-              className="mx-auto mb-5 sm:mb-8 w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain drop-shadow-md"
-            />
-
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary font-medium">
               Vrindavan · Mathura · Uttar Pradesh
             </p>

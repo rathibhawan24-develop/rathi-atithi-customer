@@ -45,6 +45,19 @@ const MAX_DAYS_AHEAD = 180;
 export function BookingWizard() {
   const [step, setStep] = useState<Step>(1);
   const [error, setError] = useState<string | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  const firstStepRender = useRef(true);
+
+  // Scroll to the top of the wizard whenever the step changes (these are not
+  // route changes, so the global ScrollToTop doesn't cover them). Skipped on
+  // the very first render.
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   // Step 1
   const [checkIn, setCheckIn] = useState(todayIso());
@@ -275,7 +288,10 @@ export function BookingWizard() {
 
   // -------- RENDER --------
   return (
-    <div className="space-y-5 sm:space-y-6 pb-24 sm:pb-0">
+    <div
+      ref={topRef}
+      className="space-y-5 sm:space-y-6 pb-24 sm:pb-0 scroll-mt-24"
+    >
       {step < 5 && <StepIndicator step={step} />}
 
       {error && (

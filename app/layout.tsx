@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen flex flex-col">
+        <ScrollToTop />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

@@ -4,12 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePublicSettings, telHref } from "@/lib/use-public-settings";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-// TODO: replace with real number from admin /settings once filled in
-const PHONE_DISPLAY = "+91 90000 00000";
-const PHONE_TEL = "+919000000000";
 
 const LINKS = [
   { href: "/#rooms", label: "Rooms" },
@@ -20,9 +17,10 @@ const LINKS = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const settings = usePublicSettings();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="container flex items-center justify-between h-16">
         <Link
           href="/"
@@ -32,12 +30,12 @@ export function SiteHeader() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${BASE_PATH}/logo.png`}
-            alt="Rathi Atithi Bhawan logo"
+            alt={`${settings.hotel_name} logo`}
             className="h-11 w-11 object-contain shrink-0"
           />
           <div className="flex flex-col leading-tight">
             <span className="font-display text-base sm:text-lg tracking-tight">
-              Rathi Atithi Bhawan
+              {settings.hotel_name}
             </span>
             <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
               Vrindavan
@@ -61,15 +59,15 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           {/* Phone — visible on tablet+, icon-only on mobile */}
           <a
-            href={`tel:${PHONE_TEL}`}
+            href={telHref(settings.contact_phone)}
             className="hidden sm:inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-2"
             aria-label="Call us"
           >
             <Phone className="h-4 w-4" />
-            <span className="hidden md:inline">{PHONE_DISPLAY}</span>
+            <span className="hidden md:inline">{settings.contact_phone}</span>
           </a>
           <a
-            href={`tel:${PHONE_TEL}`}
+            href={telHref(settings.contact_phone)}
             className="sm:hidden inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted transition-colors"
             aria-label="Call us"
           >

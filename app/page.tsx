@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/primitives";
 import { ContactForm } from "@/components/contact-form";
+import { ContactButtons } from "@/components/contact-buttons";
 import { HeroSearch } from "@/components/hero-search";
 import { RoomCarousel, type CarouselSlide } from "@/components/room-carousel";
 import { supabase } from "@/lib/supabase";
@@ -30,9 +31,6 @@ export const dynamic = "force-static";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 // TODO: replace with real numbers from admin /settings once filled in
-const PHONE_DISPLAY = "+91 90000 00000";
-const PHONE_TEL = "+919000000000";
-const WHATSAPP = "919000000000";
 
 type RoomTypeSummary = {
   type: string;
@@ -383,24 +381,7 @@ export default async function LandingPage() {
             Located in Vrindavan, walking distance to major temples and ghats.
             Easy access from Mathura station and Delhi by road.
           </p>
-          <div className="mt-6 sm:mt-8 inline-flex flex-wrap justify-center gap-2 sm:gap-3">
-            <a
-              href={`tel:${PHONE_TEL}`}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-card hover:bg-muted/40 transition-colors h-11 px-5 text-sm font-medium"
-            >
-              <Phone className="h-4 w-4 text-primary" />
-              {PHONE_DISPLAY}
-            </a>
-            <a
-              href={`https://wa.me/${WHATSAPP}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-[#25D366] text-white hover:bg-[#1faa56] transition-colors h-11 px-5 text-sm font-medium"
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-          </div>
+          <ContactButtons />
         </div>
       </section>
 

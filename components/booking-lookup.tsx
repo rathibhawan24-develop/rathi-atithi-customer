@@ -38,8 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function BookingLookup() {
-  const [code, setCode] = useState("");
-  const [phone, setPhone] = useState("");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BookingLookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,19 +50,15 @@ export function BookingLookup() {
     setNotFound(false);
     setResult(null);
 
-    if (!code.trim() || !phone.trim()) {
-      setError("Please enter both your booking code and phone number.");
+    if (!query.trim()) {
+      setError("Please enter your booking code or phone number.");
       return;
     }
 
     setLoading(true);
-    const { data, error: rpcError } = await supabase.rpc(
-      "get_booking_by_code",
-      {
-        p_booking_code: code.trim().toUpperCase(),
-        p_phone: phone.trim(),
-      }
-    );
+    const { data, error: rpcError } = await supabase.rpc("lookup_booking", {
+      p_query: query.trim(),
+    });
     setLoading(false);
 
     if (rpcError) {
@@ -82,34 +77,21 @@ export function BookingLookup() {
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="bl_code">Booking code</Label>
-                <Input
-                  id="bl_code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="RAB-XXXXXX"
-                  className="font-mono uppercase tracking-wider"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bl_phone">Phone (10 digits)</Label>
-                <Input
-                  id="bl_phone"
-                  type="tel"
-                  inputMode="numeric"
-                  value={phone}
-                  onChange={(e) =>
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  placeholder="9876543210"
-                  maxLength={10}
-                  pattern="\d{10}"
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="bl_query">Booking code or phone number</Label>
+              <Input
+                id="bl_query"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="RAB-XXXXXX  or  9876543210"
+                className="h-12 text-base"
+                autoComplete="off"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter either the booking code from your confirmation, or the
+                phone number you booked with.
+              </p>
             </div>
 
             {error && (
@@ -133,9 +115,8 @@ export function BookingLookup() {
             <AlertCircle className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
             <p className="font-medium">No booking found</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-              We couldn&apos;t find a booking matching that code and phone number.
-              Double-check both — the code is case-insensitive (we&apos;ll
-              uppercase it for you).
+              We couldn&apos;t find a booking matching that. Double-check the
+              booking code or phone number and try again.
             </p>
           </CardContent>
         </Card>

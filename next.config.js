@@ -1,16 +1,17 @@
 /** @type {import('next').NextConfig} */
-const basePath = "/rathi-atithi-customer";
+const basePath = "";
 
 const nextConfig = {
   output: "export",
   images: {
     unoptimized: true,
   },
-  // If serving from a subdirectory on GitHub Pages (username.github.io/repo-name),
-  // keep this. With a custom Hostinger domain via CNAME, set basePath to "" above.
+  // Empty basePath = serve at the root of the custom domain
+  // (rathiatithibhawan.org). When this was running under the
+  // GitHub Pages default URL (username.github.io/repo-name), it
+  // needed to be "/rathi-atithi-customer".
   basePath: basePath,
   env: {
-    // Expose basePath to client code (for <img src=...>, etc.)
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
   trailingSlash: true,

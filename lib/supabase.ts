@@ -16,9 +16,24 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 export const ROOM_PHOTOS_BUCKET = "room-photos";
+export const GALLERY_PHOTOS_BUCKET = "gallery-photos";
 
-export function storagePublicUrl(path: string): string {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/${ROOM_PHOTOS_BUCKET}/${path}`;
+/**
+ * Build a public URL for a Supabase Storage object.
+ * Supports both legacy single-arg form (assumes room-photos bucket) and the
+ * preferred two-arg form (bucket, path).
+ */
+export function storagePublicUrl(
+  pathOrBucket: string,
+  maybePath?: string
+): string {
+  if (maybePath !== undefined) {
+    if (!maybePath) return "";
+    if (maybePath.startsWith("http")) return maybePath;
+    return `${SUPABASE_URL}/storage/v1/object/public/${pathOrBucket}/${maybePath}`;
+  }
+  // Legacy single-arg form → defaults to ROOM_PHOTOS_BUCKET
+  if (!pathOrBucket) return "";
+  if (pathOrBucket.startsWith("http")) return pathOrBucket;
+  return `${SUPABASE_URL}/storage/v1/object/public/${ROOM_PHOTOS_BUCKET}/${pathOrBucket}`;
 }

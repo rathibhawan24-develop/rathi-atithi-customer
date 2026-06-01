@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/primitives";
 import { ContactForm } from "@/components/contact-form";
 import { ContactButtons } from "@/components/contact-buttons";
+import { PropertyGallery } from "@/components/property-gallery";
 import { HeroSearch } from "@/components/hero-search";
 import { RoomCarousel, type CarouselSlide } from "@/components/room-carousel";
 import { supabase } from "@/lib/supabase";
@@ -323,6 +324,11 @@ export default async function LandingPage() {
             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">
               A living scripture of devotion.
             </h2>
+          </div>
+
+          {/* Property gallery — only renders if photos have been uploaded */}
+          <div className="mb-10 sm:mb-14">
+            <PropertyGallery />
           </div>
 
           <div className="space-y-6 text-base sm:text-lg text-muted-foreground leading-relaxed">

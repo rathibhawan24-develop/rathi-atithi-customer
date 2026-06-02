@@ -275,15 +275,36 @@ export function BookingWizard() {
     }
     // Handles both jsonb (new) and array (legacy) return shapes
     let code: string | null = null;
+    let bookingId: string | null = null;
     if (data) {
       if (Array.isArray(data)) {
-        code = (data[0] as { booking_code?: string } | undefined)?.booking_code ?? null;
+        const row = data[0] as
+          | { booking_code?: string; booking_id?: string }
+          | undefined;
+        code = row?.booking_code ?? null;
+        bookingId = row?.booking_id ?? null;
       } else if (typeof data === "object") {
-        code = (data as { booking_code?: string }).booking_code ?? null;
+        const row = data as { booking_code?: string; booking_id?: string };
+        code = row.booking_code ?? null;
+        bookingId = row.booking_id ?? null;
       }
     }
     setBookingCode(code);
     setStep(5);
+
+    // Fire-and-forget: send the "booking received" email to the guest.
+    // Errors here must not block the success screen — failures get logged
+    // on the admin server. The endpoint is idempotent per (booking_id, stage).
+    if (bookingId) {
+      void fetch("https://admin.rathiatithibhawan.org/api/send-booking-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId, stage: "received" }),
+        keepalive: true,
+      }).catch((err) => {
+        console.warn("[booking] received-email request failed:", err);
+      });
+    }
   };
 
   // -------- RENDER --------

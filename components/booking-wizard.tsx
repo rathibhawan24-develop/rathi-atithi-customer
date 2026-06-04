@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Textarea, Card, CardContent } from "@/components/ui/primitives";
 import { Lightbox } from "@/components/lightbox";
+import { RoomDetailsDialog } from "@/components/room-details-dialog";
 import { supabase, storagePublicUrl } from "@/lib/supabase";
 import {
   formatCurrency,
@@ -296,6 +297,9 @@ export function BookingWizard() {
     // Errors here must not block the success screen — failures get logged
     // on the admin server. The endpoint is idempotent per (booking_id, stage).
     if (bookingId) {
+      // Fire both email and WhatsApp in parallel. Failures are independent —
+      // if one channel fails the other still gets through, and each endpoint
+      // is idempotent per (booking_id, stage).
       void fetch("https://admin.rathiatithibhawan.org/api/send-booking-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -303,6 +307,15 @@ export function BookingWizard() {
         keepalive: true,
       }).catch((err) => {
         console.warn("[booking] received-email request failed:", err);
+      });
+
+      void fetch("https://admin.rathiatithibhawan.org/api/send-booking-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId, stage: "received" }),
+        keepalive: true,
+      }).catch((err) => {
+        console.warn("[booking] received-whatsapp request failed:", err);
       });
     }
   };
@@ -977,6 +990,7 @@ function RoomCard({
   const photoUrl = photos[0] ? storagePublicUrl(photos[0]) : null;
   const isSelected = !!selected;
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <div
@@ -994,7 +1008,7 @@ function RoomCard({
             "relative sm:w-48 h-40 sm:h-auto bg-gradient-to-br from-primary/10 to-accent/30 shrink-0 flex items-center justify-center overflow-hidden",
             photoUrl && "cursor-pointer group/photo"
           )}
-          onClick={photoUrl ? () => setGalleryOpen(true) : undefined}
+          onClick={photoUrl ? () => setDetailsOpen(true) : undefined}
           role={photoUrl ? "button" : undefined}
           tabIndex={photoUrl ? 0 : undefined}
           onKeyDown={
@@ -1002,7 +1016,7 @@ function RoomCard({
               ? (e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setGalleryOpen(true);
+                    setDetailsOpen(true);
                   }
                 }
               : undefined
@@ -1063,13 +1077,22 @@ function RoomCard({
             </p>
           )}
 
-          <div className="mt-auto">
+          <div className="mt-auto flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setDetailsOpen(true)}
+              className="px-2"
+            >
+              View details →
+            </Button>
             <Button
               type="button"
               variant={isSelected ? "secondary" : "default"}
               size="sm"
               onClick={onToggle}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto sm:ml-auto"
             >
               {isSelected ? "Remove from booking" : "Select this room"}
             </Button>
@@ -1149,6 +1172,13 @@ function RoomCard({
         open={galleryOpen}
         onClose={() => setGalleryOpen(false)}
         title={`${room.name} · Room #${room.room_number}`}
+      />
+      <RoomDetailsDialog
+        room={room}
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        onSelect={onToggle}
+        isSelected={isSelected}
       />
     </div>
   );

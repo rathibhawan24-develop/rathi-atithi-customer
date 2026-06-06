@@ -274,8 +274,12 @@ export default async function LandingPage() {
 
         <div className="container pt-8 pb-12 sm:py-16 md:py-24">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary font-medium">
-              Gyan Gudadi · Old Vrindavan · On the banks of Maa Yamuna
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.3em] text-primary font-medium">
+              <span className="whitespace-nowrap">Gyan Gudadi</span>
+              <span className="mx-1.5 text-primary/50">·</span>
+              <span className="whitespace-nowrap">Old Vrindavan</span>
+              <span className="mx-1.5 text-primary/50">·</span>
+              <span className="whitespace-nowrap">On the banks of Maa Yamuna</span>
             </p>
             <h1 className="font-display text-[2rem] leading-[1.1] sm:text-5xl md:text-6xl sm:leading-[1.05] tracking-tight mt-3 sm:mt-4">
               A divine stay in the heart of Old Vrindavan.

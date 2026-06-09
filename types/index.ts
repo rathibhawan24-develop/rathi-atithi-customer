@@ -33,6 +33,9 @@ export type BookingLookupResult = {
   total_amount: number;
   paid_amount: number;
   balance: number;
+  discount_type?: "none" | "percent" | "amount";
+  discount_value?: number;
+  discount_amount?: number;
   special_requests: string | null;
   rooms: Array<{
     room_number: string;

@@ -210,6 +210,19 @@ function BookingResult({ booking }: { booking: BookingLookupResult }) {
             </div>
           )}
 
+          {Number(booking.discount_amount ?? 0) > 0 && (
+            <div className="px-4 py-2 bg-secondary/30 border-t border-border text-xs flex justify-between items-center">
+              <span className="text-muted-foreground">
+                Discount applied
+                {booking.discount_type === "percent" &&
+                  ` (${Number(booking.discount_value)}%)`}
+              </span>
+              <span className="font-medium text-primary tabular-nums">
+                − {formatCurrency(Number(booking.discount_amount))}
+              </span>
+            </div>
+          )}
+
           <div className="px-4 py-3 grid grid-cols-3 gap-3 bg-secondary/30">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">

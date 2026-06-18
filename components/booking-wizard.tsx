@@ -628,14 +628,70 @@ export function BookingWizard() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-accent/40 p-3 sm:p-4 text-sm">
-              <p className="font-medium">No advance payment required</p>
-              <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-                Your booking will be marked &quot;Pending&quot; until our staff
-                confirms it. We&apos;ll contact you on {phone || "your phone"}{" "}
-                shortly. Payment can be made at the hotel by cash, UPI, or
-                bank transfer.
+            <div className="rounded-lg bg-accent/40 p-4 sm:p-5 text-sm space-y-4">
+              <div>
+                <p className="font-medium">Important Booking Information</p>
+                <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
+                  Your booking will be marked &quot;Pending&quot; until our
+                  staff confirms it. We&apos;ll contact you on{" "}
+                  {phone || "your phone"} shortly. No advance payment is
+                  required online — payment can be made at the hotel by cash,
+                  UPI, or bank transfer.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium text-xs uppercase tracking-wide">
+                  Room Extension Policy
+                </p>
+                <ul className="text-muted-foreground text-xs mt-1.5 leading-relaxed list-disc pl-4 space-y-1">
+                  <li>
+                    Extension of stay is subject to room availability at the
+                    time of request.
+                  </li>
+                  <li>
+                    We recommend informing reception as early as possible if
+                    you wish to extend your stay.
+                  </li>
+                  <li>
+                    Extension cannot be guaranteed during peak seasons,
+                    festivals, or high-occupancy periods.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-xs uppercase tracking-wide">
+                  Cancellation &amp; Refund Policy
+                </p>
+                <ul className="text-muted-foreground text-xs mt-1.5 leading-relaxed list-disc pl-4 space-y-1">
+                  <li>
+                    Once a booking is confirmed, the advance payment is
+                    non-refundable.
+                  </li>
+                  <li>
+                    No refund will be provided in case of cancellation,
+                    no-show, early check-out, or reduction in the duration of
+                    stay.
+                  </li>
+                  <li>
+                    Guests are requested to review their travel plans
+                    carefully before confirming the reservation.
+                  </li>
+                </ul>
+              </div>
+
+              <p className="text-muted-foreground text-xs italic leading-relaxed">
+                By proceeding with the booking, guests acknowledge and agree
+                to the above policies.
               </p>
+
+              <div className="text-center pt-2 border-t border-border/40">
+                <p className="font-display text-sm mt-2">जय श्री राधे</p>
+                <p className="text-muted-foreground text-xs mt-0.5">
+                  Rathi Atithi Bhavan, Vrindavan
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-2">

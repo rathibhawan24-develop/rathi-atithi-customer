@@ -634,9 +634,7 @@ export function BookingWizard() {
                 <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
                   Your booking will be marked &quot;Pending&quot; until our
                   staff confirms it. We&apos;ll contact you on{" "}
-                  {phone || "your phone"} shortly. No advance payment is
-                  required online — payment can be made at the hotel by cash,
-                  UPI, or bank transfer.
+                  {phone || "your phone"} shortly.
                 </p>
               </div>
 

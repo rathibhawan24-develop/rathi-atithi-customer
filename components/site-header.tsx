@@ -21,17 +21,17 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      <div className="container flex items-center justify-between h-16">
+      <div className="container flex items-center justify-between h-20 sm:h-24">
         <Link
           href="/"
-          className="flex items-center gap-2.5"
+          className="flex items-center gap-3 sm:gap-4"
           onClick={() => setOpen(false)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${BASE_PATH}/logo.png`}
             alt={`${settings.hotel_name} logo`}
-            className="h-11 w-11 object-contain shrink-0"
+            className="h-14 sm:h-16 w-auto object-contain shrink-0"
           />
           <div className="flex flex-col leading-tight">
             <span className="font-display text-base sm:text-lg tracking-tight">

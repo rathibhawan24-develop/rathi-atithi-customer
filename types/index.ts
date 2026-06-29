@@ -11,6 +11,35 @@ export type Room = {
   amenities: string[] | null;
   photos: string[] | null;
   display_order: number;
+  // Override-aware pricing, merged in after get_effective_room_prices.
+  // Absent until the stay window is known; fall back to base_price * nights.
+  stay_total?: number;
+  effective_nightly?: number;
+  is_uniform?: boolean;
+  override_applied?: boolean;
+  override_name?: string | null;
+  nightly_breakdown?: Array<{
+    date: string;
+    rate: number;
+    override_name: string | null;
+  }>;
+};
+
+// Row shape returned by the get_effective_room_prices RPC.
+export type EffectiveRoomPrice = {
+  room_id: string;
+  base_price: number;
+  nights: number;
+  stay_total: number;
+  effective_nightly: number;
+  is_uniform: boolean;
+  override_applied: boolean;
+  override_name: string | null;
+  nightly_breakdown: Array<{
+    date: string;
+    rate: number;
+    override_name: string | null;
+  }>;
 };
 
 export type Addon = {

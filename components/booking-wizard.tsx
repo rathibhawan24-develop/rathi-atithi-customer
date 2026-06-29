@@ -31,7 +31,7 @@ import {
   formatDate,
   cn,
 } from "@/lib/utils";
-import type { Room, Addon } from "@/types";
+import type { Room, Addon, EffectiveRoomPrice } from "@/types";
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -94,7 +94,7 @@ export function BookingWizard() {
     for (const sel of rows) {
       const room = availableRooms.find((r) => r.id === sel.roomId);
       if (!room) continue;
-      roomsSub += Number(room.base_price) * nights;
+      roomsSub += room.stay_total ?? Number(room.base_price) * nights;
       for (const [addonId, qty] of Object.entries(sel.addons)) {
         const addon = availableAddons.find((a) => a.id === addonId);
         if (!addon || qty <= 0) continue;
@@ -152,7 +152,38 @@ export function BookingWizard() {
       setError(roomsRes.error.message);
       return;
     }
-    setAvailableRooms((roomsRes.data ?? []) as Room[]);
+    const baseRooms = (roomsRes.data ?? []) as Room[];
+
+    // Merge override-aware pricing (festival/seasonal rates). One extra query
+    // keyed by the same date window; failures fall back to base_price.
+    let rooms = baseRooms;
+    if (baseRooms.length > 0) {
+      const { data: prices } = await supabase.rpc("get_effective_room_prices", {
+        p_room_ids: baseRooms.map((r) => r.id),
+        p_check_in: ci,
+        p_check_out: co,
+      });
+      if (prices) {
+        const byId = new Map(
+          (prices as EffectiveRoomPrice[]).map((p) => [p.room_id, p])
+        );
+        rooms = baseRooms.map((r) => {
+          const p = byId.get(r.id);
+          return p
+            ? {
+                ...r,
+                stay_total: Number(p.stay_total),
+                effective_nightly: Number(p.effective_nightly),
+                is_uniform: p.is_uniform,
+                override_applied: p.override_applied,
+                override_name: p.override_name,
+                nightly_breakdown: p.nightly_breakdown,
+              }
+            : r;
+        });
+      }
+    }
+    setAvailableRooms(rooms);
     setAvailableAddons((addonsRes.data ?? []) as Addon[]);
     setSelectedRooms({});
     setStep(2);
@@ -578,7 +609,9 @@ export function BookingWizard() {
                           </span>
                         </span>
                         <span className="tabular-nums">
-                          {formatCurrency(Number(room.base_price) * nights)}
+                          {formatCurrency(
+                            room.stay_total ?? Number(room.base_price) * nights
+                          )}
                         </span>
                       </div>
                       {Object.entries(sel.addons)
@@ -1110,13 +1143,24 @@ function RoomCard({
             </div>
             <div className="text-right shrink-0">
               <p className="font-display text-xl font-semibold tabular-nums">
-                {formatCurrency(Number(room.base_price))}
+                {formatCurrency(room.effective_nightly ?? Number(room.base_price))}
               </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                per night
+                {room.override_applied && room.is_uniform === false
+                  ? "avg / night"
+                  : "per night"}
               </p>
             </div>
           </div>
+
+          {room.override_applied && (
+            <div className="mb-2 -mt-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(28_75%_45%/0.12)] px-2 py-0.5 text-[11px] font-medium text-[hsl(28_75%_45%)]">
+                <Sparkles className="h-3 w-3" />
+                Special rate{room.override_name ? ` · ${room.override_name}` : ""}
+              </span>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mb-3">
             <span className="inline-flex items-center gap-1">
@@ -1213,7 +1257,9 @@ function RoomCard({
             <p className="text-xs text-muted-foreground tabular-nums pt-1 border-t border-border">
               Room subtotal:{" "}
               <span className="font-medium">
-                {formatCurrency(Number(room.base_price) * nights)}
+                {formatCurrency(
+                  room.stay_total ?? Number(room.base_price) * nights
+                )}
               </span>{" "}
               ({nights} night{nights === 1 ? "" : "s"})
             </p>
